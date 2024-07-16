@@ -1,0 +1,40 @@
+name: CI pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest # dizer à máquina onde isto vai correr (versão mais recente do ubunto)
+
+    steps:
+    - name: Checkout code 
+      uses: actions/checkout@v1 # serve para nos logs vermos em que etapa estamos
+
+    - name: Set up Python
+      uses: actions/setup-python@v1 # aqui dizemos para usar o python
+      with:
+        python-version: '3.9'  
+
+    - name: Install dependencies # instalar o poetry
+      run: | 
+# vai à diretoria de python e descarrega o que está no link (biblioteca do poetry) 
+# cria o ambiente no github
+# instala as bibliotecas todas que temos no poetry
+        curl -sSL https://install.python-poetry.org | python - 
+        poetry config virtualenvs.create true
+        poetry install --no-interaction --no-ansi
+      
+    - name: Run pytest
+      run: |
+        poetry run pytest
+
+    - name: Run pylint
+      run: | # aqui metemos o nome do ficheiro pq o pylint só corre num ficheiro
+        poetry run pylint life_expectancy 
