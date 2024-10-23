@@ -1,34 +1,43 @@
 """Pytest configuration file"""
 import pandas as pd
 import pytest
+from pathlib import Path
+from life_expectancy.cleaning import clean_data
 
-from . import FIXTURES_DIR, OUTPUT_DIR
+# Path to the raw input data
+RAW_DATA_PATH = Path('life_expectancy/data/eu_life_expectancy_raw.tsv')
+# Path to the fixture sample data
+FIXTURE_SAMPLE_PATH = Path('life_expectancy/tests/fixtures/eu_life_expectancy_raw.tsv')
+# Path to the expected output fixture data
+EXPECTED_OUTPUT_PATH = Path('life_expectancy/tests/fixtures/eu_life_expectancy_expected_raw.csv')
 
 
-@pytest.fixture(autouse=True)
-def run_before_and_after_tests():
-    """Fixture to execute commands before and after a test is run.
+def create_sample_data() -> pd.DataFrame:
 
-    1. Everything you may write before 'yield' will run before the tests
-    2. The command 'yield' marks where tests will happen
-    3. The code after 'yield' will be run after the tests are finished.
+    #Criar a pasta Fixtures caso ela nao exista
+    FIXTURE_SAMPLE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    Before you start using your own fixtures, all tests will produce a csv file
-    on the output directory. Since this is bad practise, we are erasing this
-    file to avoid polluting your workspace.
+    # Load the raw data
+    data = pd.read_csv(RAW_DATA_PATH, sep='\t')
 
-    After refactoring your functions this code will do nothing.
-    """
-    # Setup: fill with any logic you want
+    # Create a sample of the raw data for testing
+    sample_data = data.sample(n=10, random_state=42)  # adjust the sample size as needed
+   
+    # Save the sample data to the directory
+    sample_data.to_csv(FIXTURE_SAMPLE_PATH, sep='\t', index=False)
+    
+    read_sample_data = pd.read_csv(FIXTURE_SAMPLE_PATH, sep='\t')
+    
+    clean_sample_data = clean_data(read_sample_data, country='SK')
+    print(clean_sample_data)
+    clean_sample_data.to_csv(EXPECTED_OUTPUT_PATH, index=False)
 
-    yield # this is where the testing happens
-
-    # Teardown : fill with any logic you want
-    file_path = OUTPUT_DIR / "pt_life_expectancy.csv"
-    file_path.unlink(missing_ok=True)
-
+create_sample_data()
 
 @pytest.fixture(scope="session")
-def pt_life_expectancy_expected() -> pd.DataFrame:
-    """Fixture to load the expected output of the cleaning script"""
-    return pd.read_csv(FIXTURES_DIR / "pt_life_expectancy_expected.csv")
+def read_sample_tsv():
+    return pd.read_csv(FIXTURE_SAMPLE_PATH, sep='\t')
+
+@pytest.fixture(scope="session")
+def read_sample_csv():
+    return pd.read_csv(EXPECTED_OUTPUT_PATH)

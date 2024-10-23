@@ -1,16 +1,19 @@
 """Tests for the cleaning module"""
-import pandas as pd
+from life_expectancy.tests.conftest import *
+from life_expectancy.cleaning import *
+from unittest.mock import patch
 
-from life_expectancy.cleaning import clean_data
-from . import OUTPUT_DIR
+def test_load_data(read_sample_tsv):
+    input_data = load_data(FIXTURE_SAMPLE_PATH)
+    assert read_sample_tsv.equals(input_data)
 
 
-def test_clean_data(pt_life_expectancy_expected):
-    """Run the `clean_data` function and compare the output to the expected output"""
-    clean_data()
-    pt_life_expectancy_actual = pd.read_csv(
-        OUTPUT_DIR / "pt_life_expectancy.csv"
-    )
-    pd.testing.assert_frame_equal(
-        pt_life_expectancy_actual, pt_life_expectancy_expected
-    )
+def test_clean_save_data(sample_data, expected_data):
+    test_clean_data = clean_data(sample_data)
+   
+    with patch('life_expectancy.cleaning.save_data') as mock_save_data:
+ 
+        save_data(test_clean_data, EXPECTED_OUTPUT_PATH)
+        mock_save_data.assert_called_once_with(test_clean_data, EXPECTED_OUTPUT_PATH)
+
+    assert expected_data.equals(test_clean_data)
